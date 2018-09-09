@@ -7,7 +7,6 @@ import java.util.Optional;
 
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,8 +23,8 @@ public class HtmlReader implements Reader {
 		try {
 			URL url = new URL(source);
 			Connection connection = Jsoup.connect(url.toString()).timeout(60 * 1000);
-			Document document = connection.get();
-			html = Optional.of(connection.get().html());
+			Connection.Response response = connection.execute();
+			html = Optional.of(response.body());
 			System.out.println("processed URl:" + source);
 		} catch (MalformedURLException me) {
 			System.err.println(me.getMessage() + ":" + source);

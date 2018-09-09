@@ -25,10 +25,10 @@ public class HtmlParser {
 	 * @param html
 	 * @return List
 	 */
-	public List<Link> parseLinks(Document doc) {
+	public List<Link> parseLinks(String html) {
 		List<Link> linkList = new ArrayList<>();
 		try {
-			linkList = doc.select("a").parallelStream()
+			linkList = Jsoup.parse(html, "https://en.wikipedia.org/").select("a").parallelStream()
 					.filter(link -> !(link.attr("href").contains("#") || link.attr("href").isEmpty()))
 					.map(link -> new Link(link.absUrl("href"), link.text())).collect(Collectors.toList());
 		} catch (Exception e) {

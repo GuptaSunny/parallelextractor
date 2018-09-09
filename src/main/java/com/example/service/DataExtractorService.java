@@ -28,7 +28,7 @@ public class DataExtractorService {
 	private LinkData linkData;
 	@Autowired
 	private Loader loader;
-	@Value("filepath")
+	@Value("${file.path}")
 	private String filePath;
 
 	public void process(String source) {
@@ -36,7 +36,7 @@ public class DataExtractorService {
 		Optional<String> htmlContent = reader.readContentFromSource(source);
 		htmlContent.ifPresent(content -> {
 			List<Link> filterLinks = htmlParser.parseLinks(htmlContent.get());
-			useCompletableFutureWithExecutor(filterLinks.subList(0, 10));
+			useCompletableFutureWithExecutor(filterLinks.subList(0, 1000));
 		});
 		loader.loadData(linkData, filePath);
 	}
