@@ -7,10 +7,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.example.exception.LoaderException;
+import com.example.exception.ReaderException;
 import com.example.loader.Loader;
 import com.example.model.Link;
 import com.example.reader.Reader;
@@ -28,21 +31,33 @@ public class DataExtractorService {
 	private LinkData linkData;
 	@Autowired
 	private Loader loader;
-	@Value("${file.path}")
-	private String filePath;
+	private Logger logger = LoggerFactory.getLogger(DataExtractorService.class);
 
-	public void process(String source) {
-		System.out.println("URL entered by User=" + source);
-		Optional<String> htmlContent = reader.readContentFromSource(source);
-		htmlContent.ifPresent(content -> {
-			List<Link> filterLinks = htmlParser.parseLinks(htmlContent.get());
-			useCompletableFutureWithExecutor(filterLinks.subList(0, 1000));
-		});
-		loader.loadData(linkData, filePath);
+	/**
+	 * This is main method that initiate the process of link extraction from URL and
+	 * load data to the destination.
+	 * 
+	 * @param source
+	 */
+	public void process(String source, String filePath) {
+		logger.info("URL entered by user {}", source);
+		try {
+			Optional<String> htmlContent = reader.readContentFromSource(source);
+			htmlContent.ifPresent(content -> {
+				List<Link> filterLinks = htmlParser.parseLinks(htmlContent.get());
+				useCompletableFutureWithExecutor(filterLinks);
+			});
+			loader.loadData(linkData, filePath);
+		} catch (ReaderException e) {
+			logger.error("Unable to read content from source {}", source);
+		} catch (LoaderException e) {
+			logger.error("Unable to write data in csv file for source {}", source);
+		}
 	}
 
 	/**
-	 * Approach : Using CompletableFutures with a custom Executor
+	 * This method create the task Using CompletableFutures with a custom Executor
+	 * and
 	 * 
 	 * @param tasks
 	 */
@@ -53,9 +68,9 @@ public class DataExtractorService {
 		ExecutorService executor = Executors.newFixedThreadPool(100);
 		List<CompletableFuture<Void>> futures = tasks.stream()
 				.map(t -> CompletableFuture.runAsync(() -> t.run(), executor)).collect(Collectors.toList());
-		List<Void> result = futures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+		futures.stream().map(CompletableFuture::join).collect(Collectors.toList());
 		long duration = (System.nanoTime() - start) / 1_000_000_000;
-		System.out.printf("Processed %d tasks in %d sec\n", tasks.size(), duration);
+		logger.info("Processed {} tasks in {} sec\n", tasks.size(), duration);
 		executor.shutdown();
 	}
 
