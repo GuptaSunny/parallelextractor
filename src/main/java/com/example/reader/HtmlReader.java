@@ -30,11 +30,9 @@ public class HtmlReader implements Reader {
 	 */
 	public Optional<String> readContentFromSource(String source) throws ReaderException {
 		logger.info("Reading content from source {}", source);
-		System.setProperty("https.proxyHost", "10.119.18.5");
-		System.setProperty("https.proxyHost", "8080");
 		try {
-			URL url=new URL(source);
-			Connection connection = Jsoup.connect(url.toString()).proxy("10.119.18.5", 8080) .timeout(60 * 1000);
+			URL url = new URL(source);
+			Connection connection = Jsoup.connect(url.toString()).timeout(60 * 1000);
 			Connection.Response response = connection.execute();
 			return Optional.of(response.body());
 		} catch (Exception e) {
